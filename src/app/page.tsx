@@ -28,11 +28,27 @@ export default function Home() {
   })
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setEmployees(mockEmployees)
+    // Load employees from localStorage or use mock data
+    const loadEmployees = () => {
+      try {
+        const savedEmployees = localStorage.getItem('homestaff-employees')
+        if (savedEmployees) {
+          const parsed = JSON.parse(savedEmployees)
+          setEmployees(parsed)
+        } else {
+          // First time - save mock data to localStorage
+          setEmployees(mockEmployees)
+          localStorage.setItem('homestaff-employees', JSON.stringify(mockEmployees))
+        }
+      } catch (error) {
+        console.error('Error loading employees:', error)
+        setEmployees(mockEmployees)
+      }
       setLoading(false)
-    }, 500)
+    }
+
+    // Simulate API call delay
+    setTimeout(loadEmployees, 500)
   }, [])
 
   const availableDepartments = ["Driver", "Kitchen", "Security", "Gardener", "Cleaning", "Maintenance"]
@@ -57,7 +73,11 @@ export default function Home() {
     }
     
     // Add to employees list
-    setEmployees(prev => [...prev, employee])
+    const updatedEmployees = [...employees, employee]
+    setEmployees(updatedEmployees)
+    
+    // Save to localStorage
+    localStorage.setItem('homestaff-employees', JSON.stringify(updatedEmployees))
     
     // Reset form
     setNewEmployee({

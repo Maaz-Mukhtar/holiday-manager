@@ -25,18 +25,48 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
     // Resolve params Promise and get employee data
     params.then((resolvedParams) => {
       setEmployeeId(resolvedParams.id)
-      // Simulate API call
-      setTimeout(() => {
-        const emp = getEmployeeById(resolvedParams.id)
-        if (emp) {
-          setEmployee(emp)
-          const allRecords = getLeaveRecordsByEmployeeId(resolvedParams.id)
-          setLeaveRecords(allRecords)
-          const years = getAvailableYears(resolvedParams.id)
-          setAvailableYears(years.length > 0 ? years : [new Date().getFullYear()])
+      
+      // Load employee data
+      const loadEmployeeData = () => {
+        try {
+          // First try localStorage for dynamically added employees
+          const savedEmployees = localStorage.getItem('homestaff-employees')
+          let emp = null
+          
+          if (savedEmployees) {
+            const employees = JSON.parse(savedEmployees)
+            emp = employees.find((e: Employee) => e.id === resolvedParams.id)
+          }
+          
+          // Fallback to mock data if not found in localStorage
+          if (!emp) {
+            emp = getEmployeeById(resolvedParams.id)
+          }
+          
+          if (emp) {
+            setEmployee(emp)
+            const allRecords = getLeaveRecordsByEmployeeId(resolvedParams.id)
+            setLeaveRecords(allRecords)
+            const years = getAvailableYears(resolvedParams.id)
+            setAvailableYears(years.length > 0 ? years : [new Date().getFullYear()])
+          }
+        } catch (error) {
+          console.error('Error loading employee data:', error)
+          // Fallback to mock data
+          const emp = getEmployeeById(resolvedParams.id)
+          if (emp) {
+            setEmployee(emp)
+            const allRecords = getLeaveRecordsByEmployeeId(resolvedParams.id)
+            setLeaveRecords(allRecords)
+            const years = getAvailableYears(resolvedParams.id)
+            setAvailableYears(years.length > 0 ? years : [new Date().getFullYear()])
+          }
         }
         setLoading(false)
-      }, 500)
+      }
+      
+      // Simulate API call delay
+      setTimeout(loadEmployeeData, 500)
     })
   }, [params])
 
