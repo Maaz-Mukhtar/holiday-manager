@@ -32,8 +32,8 @@ export type LeaveRecord = {
 export const mockEmployees: Employee[] = [
   {
     id: "1",
-    firstName: "John",
-    lastName: "Doe",
+    firstName: "Aqeel",
+    lastName: "",
     email: "john.doe@homestaff.com",
     department: "Driver",
     role: "Personal Driver",
@@ -48,8 +48,8 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: "2",
-    firstName: "Jane",
-    lastName: "Smith",
+    firstName: "Faisal",
+    lastName: "",
     email: "jane.smith@homestaff.com",
     department: "Kitchen",
     role: "Head Chef",
@@ -58,8 +58,8 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: "3",
-    firstName: "Mike",
-    lastName: "Johnson",
+    firstName: "Ahsan",
+    lastName: "",
     email: "mike.johnson@homestaff.com",
     department: "Security",
     role: "Security Guard",
@@ -74,8 +74,8 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: "4",
-    firstName: "Sarah",
-    lastName: "Williams",
+    firstName: "faiz",
+    lastName: "",
     email: "sarah.williams@homestaff.com",
     department: "Gardener",
     role: "Head Gardener",
@@ -84,8 +84,8 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: "5",
-    firstName: "David",
-    lastName: "Brown",
+    firstName: "Irshad",
+    lastName: "",
     email: "david.brown@homestaff.com",
     department: "Cleaning",
     role: "Housekeeper",
@@ -100,8 +100,8 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: "6",
-    firstName: "Emma",
-    lastName: "Davis",
+    firstName: "Ashiq",
+    lastName: "",
     email: "emma.davis@homestaff.com",
     department: "Maintenance",
     role: "Electrician",
@@ -110,8 +110,8 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: "7",
-    firstName: "Tom",
-    lastName: "Wilson",
+    firstName: "Imran",
+    lastName: "",
     email: "tom.wilson@homestaff.com",
     department: "Maintenance",
     role: "Plumber",
@@ -120,8 +120,8 @@ export const mockEmployees: Employee[] = [
   },
   {
     id: "8",
-    firstName: "Lisa",
-    lastName: "Garcia",
+    firstName: "Amir",
+    lastName: "",
     email: "lisa.garcia@homestaff.com",
     department: "Kitchen",
     role: "Sous Chef",
