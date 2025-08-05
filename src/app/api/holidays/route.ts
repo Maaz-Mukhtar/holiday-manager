@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const year = searchParams.get("year")
 
-    const whereClause: Prisma.HolidayWhereInput = {}
+    let whereClause: any = {}
 
     // Role-based filtering
     if (session.user.role === "EMPLOYEE") {
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
 
     if (department && session.user.role === "ADMIN") {
       whereClause.user = {
-        ...(whereClause.user || {}),
-        department: department
+        ...whereClause.user,
+        department
       }
     }
 
