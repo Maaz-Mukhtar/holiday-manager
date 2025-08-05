@@ -4,10 +4,28 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { mockEmployees, type Employee } from "@/data/mockData"
 
+type NewEmployeeForm = {
+  firstName: string
+  lastName: string
+  email: string
+  department: string
+  role: string
+  annualLeaveEntitlement: number
+}
+
 export default function Home() {
   const [employees, setEmployees] = useState<Employee[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDepartment, setSelectedDepartment] = useState<string>("All")
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newEmployee, setNewEmployee] = useState<NewEmployeeForm>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    department: "Driver",
+    role: "",
+    annualLeaveEntitlement: 25
+  })
 
   useEffect(() => {
     // Simulate API call
@@ -17,7 +35,50 @@ export default function Home() {
     }, 500)
   }, [])
 
-  const departments = ["All", ...new Set(mockEmployees.map(emp => emp.department))]
+  const availableDepartments = ["Driver", "Kitchen", "Security", "Gardener", "Cleaning", "Maintenance"]
+  const departments = ["All", ...new Set(employees.map(emp => emp.department))]
+
+  const handleAddEmployee = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    // Generate new ID
+    const newId = (Math.max(...employees.map(emp => parseInt(emp.id))) + 1).toString()
+    
+    // Create new employee object
+    const employee: Employee = {
+      id: newId,
+      firstName: newEmployee.firstName,
+      lastName: newEmployee.lastName,
+      email: newEmployee.email,
+      department: newEmployee.department,
+      role: newEmployee.role,
+      annualLeaveEntitlement: newEmployee.annualLeaveEntitlement,
+      currentStatus: "available"
+    }
+    
+    // Add to employees list
+    setEmployees(prev => [...prev, employee])
+    
+    // Reset form
+    setNewEmployee({
+      firstName: "",
+      lastName: "",
+      email: "",
+      department: "Driver",
+      role: "",
+      annualLeaveEntitlement: 25
+    })
+    
+    // Close modal
+    setShowAddModal(false)
+  }
+
+  const handleInputChange = (field: keyof NewEmployeeForm, value: string | number) => {
+    setNewEmployee(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
   
   const filteredEmployees = selectedDepartment === "All" 
     ? employees 
@@ -91,11 +152,20 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">HomeStaff Status Dashboard</h1>
-          <p className="mt-2 text-sm text-gray-600">
-            View current household staff availability and leave status
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">HomeStaff Status Dashboard</h1>
+            <p className="mt-2 text-sm text-gray-600">
+              View current household staff availability and leave status
+            </p>
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-colors"
+          >
+            <span className="text-lg">+</span>
+            Add Staff Member
+          </button>
         </div>
 
         {/* Department Filter */}
@@ -203,6 +273,128 @@ export default function Home() {
             </Link>
           ))}
         </div>
+
+        {/* Add Employee Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Add New Staff Member</h2>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={handleAddEmployee} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newEmployee.firstName}
+                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter first name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={newEmployee.lastName}
+                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter last name (optional)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={newEmployee.email}
+                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter email address"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Department *
+                  </label>
+                  <select
+                    required
+                    value={newEmployee.department}
+                    onChange={(e) => handleInputChange("department", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    {availableDepartments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Job Role *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newEmployee.role}
+                    onChange={(e) => handleInputChange("role", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter job role"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Annual Leave Entitlement (days) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    max="50"
+                    value={newEmployee.annualLeaveEntitlement}
+                    onChange={(e) => handleInputChange("annualLeaveEntitlement", parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="25"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    Add Staff Member
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
