@@ -10,9 +10,12 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    // Type assertion for user properties
+    const user = session.user as { id: string; role: string; department: string }
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
@@ -24,21 +27,21 @@ export async function GET(request: NextRequest) {
     const whereClause: Record<string, any> = {}
 
     // Role-based filtering
-    if (session.user.role === "EMPLOYEE") {
-      whereClause.userId = session.user.id
-    } else if (session.user.role === "MANAGER" && session.user.department) {
+    if (user.role === "EMPLOYEE") {
+      whereClause.userId = user.id
+    } else if (user.role === "MANAGER" && user.department) {
       // Managers can see their department's holidays
       whereClause.user = {
-        department: session.user.department
+        department: user.department
       }
     }
 
     // Apply additional filters
-    if (userId && session.user.role !== "EMPLOYEE") {
+    if (userId && user.role !== "EMPLOYEE") {
       whereClause.userId = userId
     }
 
-    if (department && session.user.role === "ADMIN") {
+    if (department && user.role === "ADMIN") {
       whereClause.user = {
         ...whereClause.user,
         department
@@ -92,9 +95,12 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session) {
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    // Type assertion for user properties
+    const user = session.user as { id: string; role: string; department: string }
 
     const body: CreateHolidayData = await request.json()
     
@@ -118,7 +124,7 @@ export async function POST(request: NextRequest) {
     // Check for overlapping holidays
     const overlappingHoliday = await prisma.holiday.findFirst({
       where: {
-        userId: session.user.id,
+        userId: user.id,
         status: { in: ["PENDING", "APPROVED"] },
         OR: [
           {
@@ -153,12 +159,12 @@ export async function POST(request: NextRequest) {
 
     // Check available holiday days (only for annual leave)
     if (body.holidayType === "ANNUAL") {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
+      const userDetails = await prisma.user.findUnique({
+        where: { id: user.id },
         select: { annualLeaveEntitlement: true, carryOverDays: true }
       })
 
-      if (!user) {
+      if (!userDetails) {
         return NextResponse.json({ error: "User not found" }, { status: 404 })
       }
 
@@ -166,7 +172,7 @@ export async function POST(request: NextRequest) {
       const currentYear = new Date().getFullYear()
       const usedDays = await prisma.holiday.aggregate({
         where: {
-          userId: session.user.id,
+          userId: user.id,
           holidayType: "ANNUAL",
           status: { in: ["APPROVED", "PENDING"] },
           startDate: {
@@ -178,7 +184,7 @@ export async function POST(request: NextRequest) {
       })
 
       const totalUsedDays = usedDays._sum.workingDays || 0
-      const availableDays = user.annualLeaveEntitlement + user.carryOverDays - totalUsedDays
+      const availableDays = userDetails.annualLeaveEntitlement + userDetails.carryOverDays - totalUsedDays
 
       if (workingDays > availableDays) {
         return NextResponse.json({ 
@@ -190,7 +196,7 @@ export async function POST(request: NextRequest) {
     // Create holiday request
     const holiday = await prisma.holiday.create({
       data: {
-        userId: session.user.id,
+        userId: user.id,
         startDate,
         endDate,
         totalDays,
@@ -212,13 +218,13 @@ export async function POST(request: NextRequest) {
     })
 
     // Create notification for managers
-    if (session.user.department) {
+    if (user.department) {
       const managers = await prisma.user.findMany({
         where: {
-          department: session.user.department,
+          department: user.department,
           role: { in: ["MANAGER", "ADMIN"] },
           isActive: true,
-          id: { not: session.user.id }
+          id: { not: user.id }
         }
       })
 
