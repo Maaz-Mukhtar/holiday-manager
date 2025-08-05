@@ -10,7 +10,12 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type')
 
     // Build where clause based on query parameters
-    const where: any = {}
+    const where: {
+      employeeId?: string
+      year?: number
+      status?: string
+      type?: string
+    } = {}
     
     if (employeeId) {
       where.employeeId = employeeId

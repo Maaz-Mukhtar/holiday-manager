@@ -12,7 +12,7 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey)
     
     // Test 1: Check if we can connect and query tables
-    const { data: employees, error: employeeError } = await supabase
+    const { error: employeeError } = await supabase
       .from('employees')
       .select('count')
       .limit(1)
@@ -23,7 +23,7 @@ export async function GET() {
       console.log('✅ Employees table accessible via Supabase client')
     }
     
-    const { data: leaveRecords, error: leaveError } = await supabase
+    const { error: leaveError } = await supabase
       .from('leave_records')
       .select('count')
       .limit(1)
