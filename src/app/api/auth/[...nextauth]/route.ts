@@ -1,8 +1,17 @@
-// @ts-expect-error - NextAuth v4 has type issues with App Router
-import NextAuth from "next-auth"
+import { NextRequest, NextResponse } from "next/server"
 import { authOptions } from "@/lib/auth"
 
-// @ts-expect-error - NextAuth v4 compatibility with App Router
-const handler = NextAuth(authOptions)
+// Manually handle NextAuth since v4 has App Router compatibility issues
+export async function GET(req: NextRequest) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const NextAuth = require("next-auth").default
+  const handler = NextAuth(authOptions)
+  return handler(req)
+}
 
-export { handler as GET, handler as POST }
+export async function POST(req: NextRequest) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const NextAuth = require("next-auth").default
+  const handler = NextAuth(authOptions)
+  return handler(req)
+}
