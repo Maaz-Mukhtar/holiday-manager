@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const year = searchParams.get("year")
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const whereClause: Record<string, any> = {}
 
     // Role-based filtering
