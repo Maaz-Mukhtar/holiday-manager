@@ -35,11 +35,38 @@ type LeaveRecord = {
   updatedAt: string
 }
 
+type LeaveForm = {
+  startDate: string
+  endDate: string
+  totalDays: number
+  workingDays: number
+  type: string
+  status: string
+  notes: string
+  year: number
+}
+
 export default function EmployeeDetail({ params }: { params: Promise<{ id: string }> }) {
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAddLeaveModal, setShowAddLeaveModal] = useState(false)
+  const [editingLeave, setEditingLeave] = useState<LeaveRecord | null>(null)
+  
+  const [leaveForm, setLeaveForm] = useState<LeaveForm>({
+    startDate: "",
+    endDate: "",
+    totalDays: 1,
+    workingDays: 1,
+    type: "ANNUAL",
+    status: "APPROVED",
+    notes: "",
+    year: new Date().getFullYear()
+  })
+
+  const leaveTypes = ["ANNUAL", "SICK", "PERSONAL", "MATERNITY", "PATERNITY"]
+  const leaveStatuses = ["APPROVED", "PENDING", "REJECTED"]
 
   useEffect(() => {
     // Resolve params Promise and get employee data
@@ -72,6 +99,205 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
       loadEmployeeData()
     })
   }, [params])
+
+  const calculateDays = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return { total: 1, working: 1 }
+    
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    
+    if (start >= end) return { total: 1, working: 1 }
+    
+    const totalDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    
+    // Simple working days calculation (exclude weekends)
+    let workingDays = 0
+    const currentDate = new Date(start)
+    
+    while (currentDate <= end) {
+      const dayOfWeek = currentDate.getDay()
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) { // Not Sunday or Saturday
+        workingDays++
+      }
+      currentDate.setDate(currentDate.getDate() + 1)
+    }
+    
+    return { total: totalDays, working: workingDays }
+  }
+
+  const handleFormChange = (field: keyof LeaveForm, value: string | number) => {
+    const newForm = { ...leaveForm, [field]: value }
+    
+    // Auto-calculate days when dates change
+    if (field === 'startDate' || field === 'endDate') {
+      const { total, working } = calculateDays(newForm.startDate, newForm.endDate)
+      newForm.totalDays = total
+      newForm.workingDays = working
+      
+      // Auto-set year based on start date
+      if (field === 'startDate' && newForm.startDate) {
+        newForm.year = new Date(newForm.startDate).getFullYear()
+      }
+    }
+    
+    setLeaveForm(newForm)
+  }
+
+  const handleAddLeave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!employee) return
+    
+    try {
+      const response = await fetch('/api/leave-records', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...leaveForm,
+          employeeId: employee.id
+        })
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Refresh employee data to get updated records and status
+        const updatedResponse = await fetch(`/api/employees/${employee.id}`)
+        const updatedData = await updatedResponse.json()
+        
+        if (updatedData.success) {
+          setEmployee(updatedData.employee)
+          
+          // Update available years
+          const leaveRecords = updatedData.employee.leaveRecords || []
+          const years = [...new Set(leaveRecords.map((record: LeaveRecord) => record.year))] as number[]
+          setAvailableYears(years.length > 0 ? years.sort((a, b) => b - a) : [new Date().getFullYear()])
+        }
+        
+        // Reset form and close modal
+        setLeaveForm({
+          startDate: "",
+          endDate: "",
+          totalDays: 1,
+          workingDays: 1,
+          type: "ANNUAL",
+          status: "APPROVED",
+          notes: "",
+          year: new Date().getFullYear()
+        })
+        setShowAddLeaveModal(false)
+      } else {
+        alert('Error adding leave record: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error adding leave record:', error)
+      alert('Failed to add leave record. Please try again.')
+    }
+  }
+
+  const handleEditLeave = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!editingLeave) return
+    
+    try {
+      const response = await fetch(`/api/leave-records/${editingLeave.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(leaveForm)
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Refresh employee data
+        const updatedResponse = await fetch(`/api/employees/${employee?.id}`)
+        const updatedData = await updatedResponse.json()
+        
+        if (updatedData.success) {
+          setEmployee(updatedData.employee)
+        }
+        
+        // Reset form and close modal
+        setEditingLeave(null)
+        setLeaveForm({
+          startDate: "",
+          endDate: "",
+          totalDays: 1,
+          workingDays: 1,
+          type: "ANNUAL",
+          status: "APPROVED",
+          notes: "",
+          year: new Date().getFullYear()
+        })
+      } else {
+        alert('Error updating leave record: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error updating leave record:', error)
+      alert('Failed to update leave record. Please try again.')
+    }
+  }
+
+  const handleDeleteLeave = async (leaveId: string) => {
+    if (!confirm('Are you sure you want to delete this leave record?')) return
+    
+    try {
+      const response = await fetch(`/api/leave-records/${leaveId}`, {
+        method: 'DELETE'
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Refresh employee data
+        const updatedResponse = await fetch(`/api/employees/${employee?.id}`)
+        const updatedData = await updatedResponse.json()
+        
+        if (updatedData.success) {
+          setEmployee(updatedData.employee)
+        }
+      } else {
+        alert('Error deleting leave record: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error deleting leave record:', error)
+      alert('Failed to delete leave record. Please try again.')
+    }
+  }
+
+  const startEditLeave = (leave: LeaveRecord) => {
+    setEditingLeave(leave)
+    setLeaveForm({
+      startDate: leave.startDate.split('T')[0], // Convert to YYYY-MM-DD format
+      endDate: leave.endDate.split('T')[0],
+      totalDays: leave.totalDays,
+      workingDays: leave.workingDays,
+      type: leave.type,
+      status: leave.status,
+      notes: leave.notes || "",
+      year: leave.year
+    })
+  }
+
+  const closeModal = () => {
+    setShowAddLeaveModal(false)
+    setEditingLeave(null)
+    setLeaveForm({
+      startDate: "",
+      endDate: "",
+      totalDays: 1,
+      workingDays: 1,
+      type: "ANNUAL",
+      status: "APPROVED",
+      notes: "",
+      year: new Date().getFullYear()
+    })
+  }
 
   if (loading) {
     return (
@@ -307,6 +533,17 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                   ))}
                 </select>
               </div>
+
+              {/* Add Leave Button */}
+              <div className="mt-6">
+                <button
+                  onClick={() => setShowAddLeaveModal(true)}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  <span className="text-lg">+</span>
+                  Add Leave Record
+                </button>
+              </div>
             </div>
           </div>
 
@@ -341,6 +578,9 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Notes
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -367,6 +607,20 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                           <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                             {record.notes || "-"}
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <button
+                              onClick={() => startEditLeave(record)}
+                              className="text-indigo-600 hover:text-indigo-900 mr-3"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLeave(record.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Delete
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -376,6 +630,155 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
             </div>
           </div>
         </div>
+
+        {/* Add/Edit Leave Modal */}
+        {(showAddLeaveModal || editingLeave) && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-screen overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {editingLeave ? 'Edit Leave Record' : 'Add Leave Record'}
+                </h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <form onSubmit={editingLeave ? handleEditLeave : handleAddLeave} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={leaveForm.startDate}
+                    onChange={(e) => handleFormChange("startDate", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={leaveForm.endDate}
+                    onChange={(e) => handleFormChange("endDate", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Total Days
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={leaveForm.totalDays}
+                      onChange={(e) => handleFormChange("totalDays", parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Working Days
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={leaveForm.workingDays}
+                      onChange={(e) => handleFormChange("workingDays", parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Leave Type *
+                  </label>
+                  <select
+                    required
+                    value={leaveForm.type}
+                    onChange={(e) => handleFormChange("type", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                  >
+                    {leaveTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Status *
+                  </label>
+                  <select
+                    required
+                    value={leaveForm.status}
+                    onChange={(e) => handleFormChange("status", e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                  >
+                    {leaveStatuses.map(status => (
+                      <option key={status} value={status}>{status}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Year
+                  </label>
+                  <input
+                    type="number"
+                    value={leaveForm.year}
+                    onChange={(e) => handleFormChange("year", parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                    readOnly
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Notes
+                  </label>
+                  <textarea
+                    value={leaveForm.notes}
+                    onChange={(e) => handleFormChange("notes", e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                    placeholder="Optional notes about this leave..."
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    {editingLeave ? 'Update Leave' : 'Add Leave'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
