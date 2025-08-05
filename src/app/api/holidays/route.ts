@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     if (department && session.user.role === "ADMIN") {
       whereClause.user = {
-        ...whereClause.user,
+        ...(whereClause.user || {}),
         department: department
       }
     }
