@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id                     String  @id @default(cuid())
+  firstName              String
+  lastName               String
+  email                  String  @unique
+  department             String
+  role                   String
+  annualLeaveEntitlement Int
+  currentStatus          String  @default("available")
+  currentLeaveStartDate  DateTime?
+  currentLeaveEndDate    DateTime?
+  currentLeaveType       String?
+  currentLeaveRemaining  Int?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  
+  leaveRecords LeaveRecord[]
+
+  @@map("employees")
+}
+
+model LeaveRecord {
+  id          String   @id @default(cuid())
+  employeeId  String
+  startDate   DateTime
+  endDate     DateTime
+  totalDays   Int
+  workingDays Int
+  type        String
+  status      String   @default("APPROVED")
+  notes       String?
+  year        Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("leave_records")
+}

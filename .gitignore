@@ -49,3 +49,5 @@ next-env.d.ts
 
 # test files
 test-db.js
+
+/src/generated/prisma
