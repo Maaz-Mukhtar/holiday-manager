@@ -6,7 +6,7 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export async function GET() {
   try {
-    console.log('Testing Supabase connection...')
+    console.log('Testing Supabase connection with transaction pooler...')
     console.log('Supabase URL:', supabaseUrl)
     
     const supabase = createClient(supabaseUrl, supabaseKey)
