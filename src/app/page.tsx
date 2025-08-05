@@ -282,21 +282,21 @@ export default function Home() {
                   </div>
 
                   {/* Leave Details */}
-                  {employee.currentLeaveDetails && (
+                  {(employee.currentLeaveStartDate && employee.currentLeaveEndDate && employee.currentLeaveType) && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                       <div className="text-xs text-gray-600 mb-1">
-                        {formatDateRange(employee.currentLeaveDetails.startDate, employee.currentLeaveDetails.endDate)}
+                        {formatDateRange(employee.currentLeaveStartDate, employee.currentLeaveEndDate)}
                       </div>
                       <div className="text-xs text-gray-500">
                         {employee.currentStatus === "on_leave" 
-                          ? `${getDaysRemaining(employee.currentLeaveDetails.endDate)} days remaining`
+                          ? `${getDaysRemaining(employee.currentLeaveEndDate)} days remaining`
                           : employee.currentStatus === "returning_soon"
-                          ? `Returns in ${getDaysRemaining(employee.currentLeaveDetails.endDate)} day(s)`
+                          ? `Returns in ${getDaysRemaining(employee.currentLeaveEndDate)} day(s)`
                           : ""
                         }
                       </div>
                       <div className="text-xs font-medium text-gray-700 mt-1">
-                        {employee.currentLeaveDetails.type} Leave
+                        {employee.currentLeaveType} Leave
                       </div>
                     </div>
                   )}
