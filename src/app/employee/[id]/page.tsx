@@ -3,19 +3,42 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { 
-  getEmployeeById, 
-  getLeaveRecordsByEmployeeId, 
-  getAvailableYears,
-  calculateUsedLeaveDays,
-  type Employee, 
-  type LeaveRecord 
-} from "@/data/mockData"
+
+type Employee = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  department: string
+  role: string
+  annualLeaveEntitlement: number
+  currentStatus: string
+  currentLeaveStartDate?: string | null
+  currentLeaveEndDate?: string | null
+  currentLeaveType?: string | null
+  createdAt: string
+  updatedAt: string
+  leaveRecords?: LeaveRecord[]
+}
+
+type LeaveRecord = {
+  id: string
+  employeeId: string
+  startDate: string
+  endDate: string
+  totalDays: number
+  workingDays: number
+  type: string
+  status: string
+  notes?: string | null
+  year: number
+  createdAt: string
+  updatedAt: string
+}
 
 export default function EmployeeDetail({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [employee, setEmployee] = useState<Employee | null>(null)
-  const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
@@ -23,50 +46,34 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
 
   useEffect(() => {
     // Resolve params Promise and get employee data
-    params.then((resolvedParams) => {
+    params.then(async (resolvedParams) => {
       setEmployeeId(resolvedParams.id)
       
-      // Load employee data
-      const loadEmployeeData = () => {
+      // Load employee data from database API
+      const loadEmployeeData = async () => {
         try {
-          // First try localStorage for dynamically added employees
-          const savedEmployees = localStorage.getItem('homestaff-employees')
-          let emp = null
+          const response = await fetch(`/api/employees/${resolvedParams.id}`)
+          const data = await response.json()
           
-          if (savedEmployees) {
-            const employees = JSON.parse(savedEmployees)
-            emp = employees.find((e: Employee) => e.id === resolvedParams.id)
-          }
-          
-          // Fallback to mock data if not found in localStorage
-          if (!emp) {
-            emp = getEmployeeById(resolvedParams.id)
-          }
-          
-          if (emp) {
-            setEmployee(emp)
-            const allRecords = getLeaveRecordsByEmployeeId(resolvedParams.id)
-            setLeaveRecords(allRecords)
-            const years = getAvailableYears(resolvedParams.id)
-            setAvailableYears(years.length > 0 ? years : [new Date().getFullYear()])
+          if (data.success && data.employee) {
+            setEmployee(data.employee)
+            
+            // Extract available years from leave records
+            const leaveRecords = data.employee.leaveRecords || []
+            const years = [...new Set(leaveRecords.map((record: LeaveRecord) => record.year))]
+            setAvailableYears(years.length > 0 ? years.sort((a, b) => b - a) : [new Date().getFullYear()])
+          } else {
+            console.error('Employee not found:', data.error)
+            setEmployee(null)
           }
         } catch (error) {
           console.error('Error loading employee data:', error)
-          // Fallback to mock data
-          const emp = getEmployeeById(resolvedParams.id)
-          if (emp) {
-            setEmployee(emp)
-            const allRecords = getLeaveRecordsByEmployeeId(resolvedParams.id)
-            setLeaveRecords(allRecords)
-            const years = getAvailableYears(resolvedParams.id)
-            setAvailableYears(years.length > 0 ? years : [new Date().getFullYear()])
-          }
+          setEmployee(null)
         }
         setLoading(false)
       }
       
-      // Simulate API call delay
-      setTimeout(loadEmployeeData, 500)
+      loadEmployeeData()
     })
   }, [params])
 
@@ -94,8 +101,11 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
     )
   }
 
+  const leaveRecords = employee?.leaveRecords || []
   const filteredRecords = leaveRecords.filter(record => record.year === selectedYear)
-  const usedAnnualDays = employeeId ? calculateUsedLeaveDays(employeeId, selectedYear) : 0
+  const usedAnnualDays = filteredRecords
+    .filter(record => record.type === 'ANNUAL' && record.status === 'APPROVED')
+    .reduce((total, record) => total + record.workingDays, 0)
   const remainingAnnualDays = employee ? employee.annualLeaveEntitlement - usedAnnualDays : 0
 
   const getStatusColor = (status: string) => {
@@ -218,25 +228,25 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Current Leave Details */}
-            {employee.currentLeaveDetails && (
+            {(employee.currentLeaveStartDate && employee.currentLeaveEndDate && employee.currentLeaveType) && (
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                 <h3 className="text-sm font-medium text-gray-900 mb-2">Current Leave</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Period:</span>
-                    <p className="font-medium">{formatDateRange(employee.currentLeaveDetails.startDate, employee.currentLeaveDetails.endDate)}</p>
+                    <p className="font-medium">{formatDateRange(employee.currentLeaveStartDate, employee.currentLeaveEndDate)}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Type:</span>
-                    <p className="font-medium">{employee.currentLeaveDetails.type} Leave</p>
+                    <p className="font-medium">{employee.currentLeaveType} Leave</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Status:</span>
                     <p className="font-medium">
                       {employee.currentStatus === "on_leave" 
-                        ? `${getDaysRemaining(employee.currentLeaveDetails.endDate)} days remaining`
+                        ? `${getDaysRemaining(employee.currentLeaveEndDate)} days remaining`
                         : employee.currentStatus === "returning_soon"
-                        ? `Returns in ${getDaysRemaining(employee.currentLeaveDetails.endDate)} day(s)`
+                        ? `Returns in ${getDaysRemaining(employee.currentLeaveEndDate)} day(s)`
                         : "Available"
                       }
                     </p>
