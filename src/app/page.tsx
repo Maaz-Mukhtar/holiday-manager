@@ -7,7 +7,7 @@ import { type Employee } from "@/data/mockData"
 type NewEmployeeForm = {
   firstName: string
   lastName: string
-  email: string
+  phone: string
   department: string
   role: string
   annualLeaveEntitlement: number
@@ -21,7 +21,7 @@ export default function Home() {
   const [newEmployee, setNewEmployee] = useState<NewEmployeeForm>({
     firstName: "",
     lastName: "",
-    email: "",
+    phone: "",
     department: "Driver",
     role: "",
     annualLeaveEntitlement: 25
@@ -73,7 +73,7 @@ export default function Home() {
         setNewEmployee({
           firstName: "",
           lastName: "",
-          email: "",
+          phone: "",
           department: "Driver",
           role: "",
           annualLeaveEntitlement: 25
@@ -335,15 +335,14 @@ export default function Home() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
+                    Phone Number
                   </label>
                   <input
-                    type="email"
-                    required
-                    value={newEmployee.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
+                    type="tel"
+                    value={newEmployee.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
-                    placeholder="Enter email address"
+                    placeholder="Enter phone number (optional)"
                   />
                 </div>
 

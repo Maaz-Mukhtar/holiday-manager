@@ -32,14 +32,14 @@ export async function POST(request: NextRequest) {
     const { 
       firstName, 
       lastName, 
-      email, 
+      phone, 
       department, 
       role, 
       annualLeaveEntitlement 
     } = body
 
     // Validate required fields
-    if (!firstName || !lastName || !email || !department || !role || !annualLeaveEntitlement) {
+    if (!firstName || !department || !role || !annualLeaveEntitlement) {
       return NextResponse.json(
         { 
           success: false, 
@@ -53,8 +53,8 @@ export async function POST(request: NextRequest) {
     const employee = await prisma.employee.create({
       data: {
         firstName,
-        lastName,
-        email,
+        lastName: lastName || '',
+        email: phone || '',  // Store phone in email field temporarily
         department,
         role,
         annualLeaveEntitlement: parseInt(annualLeaveEntitlement)
@@ -68,12 +68,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating employee:', error)
     
-    // Handle unique constraint errors (duplicate email)
+    // Handle unique constraint errors (duplicate phone)
     if (error instanceof Error && error.message.includes('Unique constraint')) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Employee with this email already exists' 
+          error: 'Employee with this phone number already exists' 
         },
         { status: 409 }
       )
