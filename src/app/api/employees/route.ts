@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       data: {
         firstName,
         lastName: lastName || '',
-        email: phone || '',  // Store phone in email field temporarily
+        email: phone || `temp_${Date.now()}@placeholder.com`,  // Generate unique placeholder if no phone
         department,
         role,
         annualLeaveEntitlement: parseInt(annualLeaveEntitlement)
