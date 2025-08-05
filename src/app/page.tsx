@@ -315,7 +315,7 @@ export default function Home() {
                     required
                     value={newEmployee.firstName}
                     onChange={(e) => handleInputChange("firstName", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="Enter first name"
                   />
                 </div>
@@ -328,7 +328,7 @@ export default function Home() {
                     type="text"
                     value={newEmployee.lastName}
                     onChange={(e) => handleInputChange("lastName", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="Enter last name (optional)"
                   />
                 </div>
@@ -342,7 +342,7 @@ export default function Home() {
                     required
                     value={newEmployee.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="Enter email address"
                   />
                 </div>
@@ -355,7 +355,7 @@ export default function Home() {
                     required
                     value={newEmployee.department}
                     onChange={(e) => handleInputChange("department", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                   >
                     {availableDepartments.map(dept => (
                       <option key={dept} value={dept}>{dept}</option>
@@ -372,7 +372,7 @@ export default function Home() {
                     required
                     value={newEmployee.role}
                     onChange={(e) => handleInputChange("role", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="Enter job role"
                   />
                 </div>
@@ -388,7 +388,7 @@ export default function Home() {
                     max="50"
                     value={newEmployee.annualLeaveEntitlement}
                     onChange={(e) => handleInputChange("annualLeaveEntitlement", parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="25"
                   />
                 </div>
