@@ -2,7 +2,22 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { type Employee } from "@/data/mockData"
+
+type Employee = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  department: string
+  role: string
+  annualLeaveEntitlement: number
+  currentStatus: string
+  currentLeaveStartDate?: string | null
+  currentLeaveEndDate?: string | null
+  currentLeaveType?: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 type NewEmployeeForm = {
   firstName: string

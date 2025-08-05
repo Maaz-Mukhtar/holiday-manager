@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import Link from "next/link"
 
 type Employee = {
@@ -37,17 +36,14 @@ type LeaveRecord = {
 }
 
 export default function EmployeeDetail({ params }: { params: Promise<{ id: string }> }) {
-  const router = useRouter()
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
-  const [employeeId, setEmployeeId] = useState<string>("")
 
   useEffect(() => {
     // Resolve params Promise and get employee data
     params.then(async (resolvedParams) => {
-      setEmployeeId(resolvedParams.id)
       
       // Load employee data from database API
       const loadEmployeeData = async () => {
@@ -60,7 +56,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
             
             // Extract available years from leave records
             const leaveRecords = data.employee.leaveRecords || []
-            const years = [...new Set(leaveRecords.map((record: LeaveRecord) => record.year))]
+            const years = [...new Set(leaveRecords.map((record: LeaveRecord) => record.year))] as number[]
             setAvailableYears(years.length > 0 ? years.sort((a, b) => b - a) : [new Date().getFullYear()])
           } else {
             console.error('Employee not found:', data.error)
