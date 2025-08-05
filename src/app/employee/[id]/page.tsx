@@ -12,28 +12,33 @@ import {
   type LeaveRecord 
 } from "@/data/mockData"
 
-export default function EmployeeDetail({ params }: { params: { id: string } }) {
+export default function EmployeeDetail({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
   const [employee, setEmployee] = useState<Employee | null>(null)
   const [leaveRecords, setLeaveRecords] = useState<LeaveRecord[]>([])
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [availableYears, setAvailableYears] = useState<number[]>([])
   const [loading, setLoading] = useState(true)
+  const [employeeId, setEmployeeId] = useState<string>("")
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const emp = getEmployeeById(params.id)
-      if (emp) {
-        setEmployee(emp)
-        const allRecords = getLeaveRecordsByEmployeeId(params.id)
-        setLeaveRecords(allRecords)
-        const years = getAvailableYears(params.id)
-        setAvailableYears(years.length > 0 ? years : [new Date().getFullYear()])
-      }
-      setLoading(false)
-    }, 500)
-  }, [params.id])
+    // Resolve params Promise and get employee data
+    params.then((resolvedParams) => {
+      setEmployeeId(resolvedParams.id)
+      // Simulate API call
+      setTimeout(() => {
+        const emp = getEmployeeById(resolvedParams.id)
+        if (emp) {
+          setEmployee(emp)
+          const allRecords = getLeaveRecordsByEmployeeId(resolvedParams.id)
+          setLeaveRecords(allRecords)
+          const years = getAvailableYears(resolvedParams.id)
+          setAvailableYears(years.length > 0 ? years : [new Date().getFullYear()])
+        }
+        setLoading(false)
+      }, 500)
+    })
+  }, [params])
 
   if (loading) {
     return (
@@ -60,8 +65,8 @@ export default function EmployeeDetail({ params }: { params: { id: string } }) {
   }
 
   const filteredRecords = leaveRecords.filter(record => record.year === selectedYear)
-  const usedAnnualDays = calculateUsedLeaveDays(params.id, selectedYear)
-  const remainingAnnualDays = employee.annualLeaveEntitlement - usedAnnualDays
+  const usedAnnualDays = employeeId ? calculateUsedLeaveDays(employeeId, selectedYear) : 0
+  const remainingAnnualDays = employee ? employee.annualLeaveEntitlement - usedAnnualDays : 0
 
   const getStatusColor = (status: string) => {
     switch (status) {
