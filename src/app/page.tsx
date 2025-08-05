@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { mockEmployees, type Employee } from "@/data/mockData"
+import { type Employee } from "@/data/mockData"
 
 type NewEmployeeForm = {
   firstName: string
@@ -28,69 +28,66 @@ export default function Home() {
   })
 
   useEffect(() => {
-    // Load employees from localStorage or use mock data
-    const loadEmployees = () => {
+    // Load employees from database
+    const loadEmployees = async () => {
       try {
-        const savedEmployees = localStorage.getItem('homestaff-employees')
-        if (savedEmployees) {
-          const parsed = JSON.parse(savedEmployees)
-          setEmployees(parsed)
+        const response = await fetch('/api/employees')
+        const data = await response.json()
+        
+        if (data.success) {
+          setEmployees(data.employees)
         } else {
-          // First time - save mock data to localStorage
-          setEmployees(mockEmployees)
-          localStorage.setItem('homestaff-employees', JSON.stringify(mockEmployees))
+          console.error('Failed to load employees:', data.error)
         }
       } catch (error) {
         console.error('Error loading employees:', error)
-        setEmployees(mockEmployees)
       }
       setLoading(false)
     }
 
-    // Simulate API call delay
-    setTimeout(loadEmployees, 500)
+    loadEmployees()
   }, [])
 
   const availableDepartments = ["Driver", "Kitchen", "Security", "Gardener", "Cleaning", "Maintenance"]
   const departments = ["All", ...new Set(employees.map(emp => emp.department))]
 
-  const handleAddEmployee = (e: React.FormEvent) => {
+  const handleAddEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Generate new ID
-    const newId = (Math.max(...employees.map(emp => parseInt(emp.id))) + 1).toString()
-    
-    // Create new employee object
-    const employee: Employee = {
-      id: newId,
-      firstName: newEmployee.firstName,
-      lastName: newEmployee.lastName,
-      email: newEmployee.email,
-      department: newEmployee.department,
-      role: newEmployee.role,
-      annualLeaveEntitlement: newEmployee.annualLeaveEntitlement,
-      currentStatus: "available"
+    try {
+      const response = await fetch('/api/employees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newEmployee)
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        // Add new employee to the list
+        setEmployees(prev => [...prev, data.employee])
+        
+        // Reset form
+        setNewEmployee({
+          firstName: "",
+          lastName: "",
+          email: "",
+          department: "Driver",
+          role: "",
+          annualLeaveEntitlement: 25
+        })
+        
+        // Close modal
+        setShowAddModal(false)
+      } else {
+        alert('Error adding employee: ' + data.error)
+      }
+    } catch (error) {
+      console.error('Error adding employee:', error)
+      alert('Failed to add employee. Please try again.')
     }
-    
-    // Add to employees list
-    const updatedEmployees = [...employees, employee]
-    setEmployees(updatedEmployees)
-    
-    // Save to localStorage
-    localStorage.setItem('homestaff-employees', JSON.stringify(updatedEmployees))
-    
-    // Reset form
-    setNewEmployee({
-      firstName: "",
-      lastName: "",
-      email: "",
-      department: "Driver",
-      role: "",
-      annualLeaveEntitlement: 25
-    })
-    
-    // Close modal
-    setShowAddModal(false)
   }
 
   const handleInputChange = (field: keyof NewEmployeeForm, value: string | number) => {
