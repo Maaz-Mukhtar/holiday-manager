@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateHolidayData } from "@/types"
 import { calculateWorkingDays, calculateTotalDays } from "@/lib/utils"
+import { Prisma } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const year = searchParams.get("year")
 
-    let whereClause: any = {}
+    const whereClause: Prisma.HolidayWhereInput = {}
 
     // Role-based filtering
     if (session.user.role === "EMPLOYEE") {
