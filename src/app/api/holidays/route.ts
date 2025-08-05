@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { CreateHolidayData } from "@/types"
 import { calculateWorkingDays, calculateTotalDays } from "@/lib/utils"
-import { Prisma } from "@prisma/client"
+import { Prisma, HolidayStatus } from "@prisma/client"
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,12 +40,12 @@ export async function GET(request: NextRequest) {
     if (department && session.user.role === "ADMIN") {
       whereClause.user = {
         ...whereClause.user,
-        department
+        department: department
       }
     }
 
-    if (status) {
-      whereClause.status = status
+    if (status && Object.values(HolidayStatus).includes(status as HolidayStatus)) {
+      whereClause.status = status as HolidayStatus
     }
 
     if (year) {
