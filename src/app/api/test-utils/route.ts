@@ -193,7 +193,7 @@ export async function GET() {
     })
   } catch (error) {
     return NextResponse.json(
-      { status: 'ERROR', error: error.message },
+      { status: 'ERROR', error: error instanceof Error ? error.message : 'Unknown error occurred' },
       { status: 500 }
     )
   }
