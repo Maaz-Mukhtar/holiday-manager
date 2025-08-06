@@ -489,7 +489,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Annual Leave Entitlement</span>
+                    <span className="text-blue-600">Annual Leave Entitlement</span>
                     <span className="font-medium">{employee.annualLeaveEntitlement} days</span>
                   </div>
                 </div>
@@ -526,7 +526,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                 <select
                   value={selectedYear}
                   onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                 >
                   {availableYears.map(year => (
                     <option key={year} value={year}>{year}</option>
