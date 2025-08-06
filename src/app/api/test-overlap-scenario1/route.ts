@@ -15,8 +15,23 @@ export async function GET() {
   }> = []
 
   try {
-    // Ensure Prisma is connected
-    await prisma.$connect()
+    // Test database connection by making a simple query
+    try {
+      await prisma.$queryRaw`SELECT 1 as test`
+      testResults.push({
+        step: 'Setup',
+        action: 'Database connection verified',
+        status: 'SUCCESS'
+      })
+    } catch (connectionError) {
+      testResults.push({
+        step: 'Setup',
+        action: 'Database connection failed',
+        status: 'FAILED',
+        actual: connectionError instanceof Error ? connectionError.message : 'Connection error'
+      })
+      throw connectionError
+    }
 
     // Step 0: Find or create a test employee
     let testEmployee = await prisma.employee.findFirst({
