@@ -463,15 +463,15 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Period:</span>
-                    <p className="font-medium">{formatDateRange(employee.currentLeaveStartDate, employee.currentLeaveEndDate)}</p>
+                    <p className="font-medium text-black">{formatDateRange(employee.currentLeaveStartDate, employee.currentLeaveEndDate)}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Type:</span>
-                    <p className="font-medium">{employee.currentLeaveType} Leave</p>
+                    <p className="font-medium text-black">{employee.currentLeaveType} Leave</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Status:</span>
-                    <p className="font-medium">
+                    <p className="font-medium text-black">
                       {employee.currentStatus === "on_leave" 
                         ? `${getDaysRemaining(employee.currentLeaveEndDate)} days remaining`
                         : employee.currentStatus === "returning_soon"
