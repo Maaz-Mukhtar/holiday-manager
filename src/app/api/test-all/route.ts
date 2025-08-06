@@ -221,16 +221,22 @@ export async function GET() {
       const leaveRecordsRoute = await import('@/app/api/leave-records/route')
       const testUtilsRoute = await import('@/app/api/test-utils/route')
       
+      const hasEmployeesAPI = typeof employeesRoute.GET === 'function'
+      const hasLeaveRecordsAPI = typeof leaveRecordsRoute.GET === 'function' && typeof leaveRecordsRoute.POST === 'function'
+      const hasTestUtilsAPI = typeof testUtilsRoute.GET === 'function'
+      
+      const allRoutesValid = hasEmployeesAPI && hasLeaveRecordsAPI && hasTestUtilsAPI
+      
       testResults.push({
         category: 'API Health',
         name: 'API Route Handlers',
-        status: 'SUCCESS',
+        status: allRoutesValid ? 'SUCCESS' : 'FAILED',
         expected: 'API routes exist and compile',
-        actual: 'All core API routes loaded successfully',
+        actual: allRoutesValid ? 'All core API routes loaded successfully' : 'Some routes missing or invalid',
         details: {
-          employeesAPI: !!employeesRoute.GET,
-          leaveRecordsAPI: !!(leaveRecordsRoute.GET && leaveRecordsRoute.POST),
-          testUtilsAPI: !!testUtilsRoute.GET,
+          employeesAPI: hasEmployeesAPI,
+          leaveRecordsAPI: hasLeaveRecordsAPI,
+          testUtilsAPI: hasTestUtilsAPI,
           overlapTestAPI: 'test-overlap-scenario1 route exists'
         }
       })
