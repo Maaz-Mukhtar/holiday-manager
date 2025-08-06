@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { datesOverlap, formatDateForDisplay } from '@/lib/api-utils'
 
 export async function GET(
   request: NextRequest,
@@ -125,6 +126,46 @@ export async function PUT(
           error: 'Leave record not found' 
         },
         { status: 404 }
+      )
+    }
+
+    // Check for overlapping leave records (excluding current record being updated)
+    const otherLeaveRecords = await prisma.leaveRecord.findMany({
+      where: {
+        employeeId: existingRecord.employeeId,
+        status: {
+          in: ['APPROVED', 'PENDING'] // Only check approved and pending leaves
+        },
+        id: {
+          not: id // Exclude the current record being updated
+        }
+      }
+    })
+
+    // Check if any other existing leave overlaps with the updated period
+    const overlappingLeave = otherLeaveRecords.find(record => 
+      datesOverlap(start, end, record.startDate, record.endDate)
+    )
+
+    if (overlappingLeave) {
+      const overlappingPeriod = `${formatDateForDisplay(overlappingLeave.startDate)} - ${formatDateForDisplay(overlappingLeave.endDate)}`
+      const requestedPeriod = `${formatDateForDisplay(start)} - ${formatDateForDisplay(end)}`
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Updated leave dates conflict with existing ${overlappingLeave.status.toLowerCase()} leave`,
+          details: {
+            conflictingLeave: {
+              id: overlappingLeave.id,
+              period: overlappingPeriod,
+              type: overlappingLeave.type,
+              status: overlappingLeave.status
+            },
+            requestedPeriod: requestedPeriod
+          }
+        },
+        { status: 409 }
       )
     }
 
