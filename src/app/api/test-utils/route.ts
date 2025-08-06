@@ -124,7 +124,7 @@ export async function GET() {
       tests.push({
         name: 'parseInteger (valid)',
         input: '25 (min: 1, max: 50)',
-        output: error.message,
+        output: error instanceof Error ? error.message : 'Unknown error',
         expected: 25,
         status: 'FAIL'
       })
