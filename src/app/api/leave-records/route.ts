@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
       workingDays,
       type,
       notes,
+      bonus,
       year
     } = body
 
@@ -132,6 +133,7 @@ export async function POST(request: NextRequest) {
         type,
         status: 'APPROVED', // Default status
         notes: notes || null,
+        bonus: bonus ? parseInt(bonus) : null,
         year: parseInt(year)
       },
       include: {

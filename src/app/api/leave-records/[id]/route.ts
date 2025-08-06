@@ -84,6 +84,7 @@ export async function PUT(
       type,
       status,
       notes,
+      bonus,
       year
     } = body
 
@@ -138,6 +139,7 @@ export async function PUT(
         type,
         status,
         notes: notes || null,
+        bonus: bonus ? parseInt(bonus) : null,
         year: parseInt(year)
       },
       include: {

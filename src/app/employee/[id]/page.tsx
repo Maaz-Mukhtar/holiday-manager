@@ -30,6 +30,7 @@ type LeaveRecord = {
   type: string
   status: string
   notes?: string | null
+  bonus?: number | null
   year: number
   createdAt: string
   updatedAt: string
@@ -43,6 +44,7 @@ type LeaveForm = {
   type: string
   status: string
   notes: string
+  bonus: number
   year: number
 }
 
@@ -62,6 +64,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
     type: "ANNUAL",
     status: "APPROVED",
     notes: "",
+    bonus: 0,
     year: new Date().getFullYear()
   })
 
@@ -185,6 +188,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
           type: "ANNUAL",
           status: "APPROVED",
           notes: "",
+          bonus: 0,
           year: new Date().getFullYear()
         })
         setShowAddLeaveModal(false)
@@ -232,6 +236,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
           type: "ANNUAL",
           status: "APPROVED",
           notes: "",
+          bonus: 0,
           year: new Date().getFullYear()
         })
       } else {
@@ -280,6 +285,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
       type: leave.type,
       status: leave.status,
       notes: leave.notes || "",
+      bonus: leave.bonus || 0,
       year: leave.year
     })
   }
@@ -295,6 +301,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
       type: "ANNUAL",
       status: "APPROVED",
       notes: "",
+      bonus: 0,
       year: new Date().getFullYear()
     })
   }
@@ -576,6 +583,9 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                           Status
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Bonus (PKR)
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Notes
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -603,6 +613,9 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRecordStatusColor(record.status)}`}>
                               {record.status}
                             </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {record.bonus ? `₨${record.bonus.toLocaleString()}` : "-"}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                             {record.notes || "-"}
@@ -744,6 +757,20 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                     onChange={(e) => handleFormChange("year", parseInt(e.target.value))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                     readOnly
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bonus (PKR)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={leaveForm.bonus}
+                    onChange={(e) => handleFormChange("bonus", parseInt(e.target.value) || 0)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+                    placeholder="Enter bonus amount in PKR (optional)"
                   />
                 </div>
 
