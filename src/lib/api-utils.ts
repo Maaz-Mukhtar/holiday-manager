@@ -50,14 +50,14 @@ export function getYearFromDate(date: Date): number {
 }
 
 // Error response helpers
-export function createErrorResponse(message: string, status: number = 500) {
+export function createErrorResponse(message: string) {
   return {
     success: false,
     error: message
   }
 }
 
-export function createSuccessResponse(data: any) {
+export function createSuccessResponse(data: Record<string, unknown>) {
   return {
     success: true,
     ...data
@@ -65,7 +65,7 @@ export function createSuccessResponse(data: any) {
 }
 
 // Validate required fields
-export function validateRequiredFields(data: any, requiredFields: string[]): string | null {
+export function validateRequiredFields(data: Record<string, unknown>, requiredFields: string[]): string | null {
   for (const field of requiredFields) {
     if (!data[field] && data[field] !== 0) { // Allow 0 as valid value
       return `Missing required field: ${field}`
@@ -75,8 +75,8 @@ export function validateRequiredFields(data: any, requiredFields: string[]): str
 }
 
 // Parse and validate integer
-export function parseInteger(value: any, fieldName: string, min?: number, max?: number): number {
-  const parsed = parseInt(value)
+export function parseInteger(value: unknown, fieldName: string, min?: number, max?: number): number {
+  const parsed = parseInt(String(value))
   
   if (isNaN(parsed)) {
     throw new Error(`${fieldName} must be a valid number`)

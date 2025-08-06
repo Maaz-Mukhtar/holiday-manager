@@ -5,15 +5,12 @@ import {
   calculateWorkingDays,
   calculateTotalDays,
   isValidDateRange,
-  isDateInPast,
   getYearFromDate,
   createErrorResponse,
   createSuccessResponse,
   validateRequiredFields,
   parseInteger,
-  datesOverlap,
-  formatDateForDisplay,
-  calculateDaysRemaining
+  datesOverlap
 } from '@/lib/api-utils'
 
 export async function GET() {
@@ -163,7 +160,7 @@ export async function GET() {
     })
 
     // Test response helpers
-    const errorResponse = createErrorResponse('Test error', 400)
+    const errorResponse = createErrorResponse('Test error')
     tests.push({
       name: 'createErrorResponse',
       input: 'Test error',
