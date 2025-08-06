@@ -4,9 +4,16 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   let testLeaveId1: string | null = null
   let testEmployeeId: string | null = null
+  const testResults: Array<{
+    step: string
+    action: string
+    status: string
+    expected?: string
+    actual?: string
+    data?: any
+  }> = []
 
   try {
-    const testResults = []
 
     // Step 0: Find or create a test employee
     let testEmployee = await prisma.employee.findFirst({
@@ -222,7 +229,7 @@ export async function GET() {
         status: 'TEST_ERROR',
         scenario: 'Scenario 1: Create Overlapping Leave',
         error: error instanceof Error ? error.message : 'Unknown error occurred',
-        steps: testResults || [],
+        steps: testResults,
         timestamp: new Date().toISOString()
       },
       { status: 500 }
