@@ -10,7 +10,7 @@ export async function GET() {
     status: string
     expected?: string
     actual?: string
-    data?: any
+    data?: Record<string, unknown>
   }> = []
 
   try {
