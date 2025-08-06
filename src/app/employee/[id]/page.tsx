@@ -489,8 +489,8 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-blue-600">Annual Leave Entitlement</span>
-                    <span className="font-medium">{employee.annualLeaveEntitlement} days</span>
+                    <span className="text-gray-500">Annual Leave Entitlement</span>
+                    <span className="font-medium text-blue-600">{employee.annualLeaveEntitlement} days</span>
                   </div>
                 </div>
                 <div>
