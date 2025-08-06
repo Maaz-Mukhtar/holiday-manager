@@ -44,7 +44,7 @@ type LeaveForm = {
   type: string
   status: string
   notes: string
-  bonus: number
+  bonus: string | number
   year: number
 }
 
@@ -64,7 +64,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
     type: "ANNUAL",
     status: "APPROVED",
     notes: "",
-    bonus: 0,
+    bonus: "",
     year: new Date().getFullYear()
   })
 
@@ -159,6 +159,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
         },
         body: JSON.stringify({
           ...leaveForm,
+          bonus: leaveForm.bonus === "" ? 0 : parseInt(String(leaveForm.bonus)) || 0,
           employeeId: employee.id
         })
       })
@@ -188,7 +189,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
           type: "ANNUAL",
           status: "APPROVED",
           notes: "",
-          bonus: 0,
+          bonus: "",
           year: new Date().getFullYear()
         })
         setShowAddLeaveModal(false)
@@ -212,7 +213,10 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(leaveForm)
+        body: JSON.stringify({
+          ...leaveForm,
+          bonus: leaveForm.bonus === "" ? 0 : parseInt(String(leaveForm.bonus)) || 0
+        })
       })
       
       const data = await response.json()
@@ -236,7 +240,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
           type: "ANNUAL",
           status: "APPROVED",
           notes: "",
-          bonus: 0,
+          bonus: "",
           year: new Date().getFullYear()
         })
       } else {
@@ -285,7 +289,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
       type: leave.type,
       status: leave.status,
       notes: leave.notes || "",
-      bonus: leave.bonus || 0,
+      bonus: leave.bonus ? leave.bonus.toString() : "",
       year: leave.year
     })
   }
@@ -301,7 +305,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
       type: "ANNUAL",
       status: "APPROVED",
       notes: "",
-      bonus: 0,
+      bonus: "",
       year: new Date().getFullYear()
     })
   }
@@ -768,7 +772,7 @@ export default function EmployeeDetail({ params }: { params: Promise<{ id: strin
                     type="number"
                     min="0"
                     value={leaveForm.bonus}
-                    onChange={(e) => handleFormChange("bonus", parseInt(e.target.value) || 0)}
+                    onChange={(e) => handleFormChange("bonus", e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
                     placeholder="Enter bonus amount in PKR (optional)"
                   />
