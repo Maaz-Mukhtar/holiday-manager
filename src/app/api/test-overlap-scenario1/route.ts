@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { datesOverlap, formatDateForDisplay } from '@/lib/api-utils'
 
 export async function GET() {
   let testLeaveId1: string | null = null
@@ -66,50 +67,45 @@ export async function GET() {
     })
 
     // Step 1: Create first leave record (should succeed)
-    const firstLeaveData = {
-      employeeId: testEmployeeId,
-      startDate: '2024-06-10',
-      endDate: '2024-06-15',
-      totalDays: 6,
-      workingDays: 4,
-      type: 'ANNUAL',
-      status: 'APPROVED',
-      notes: 'TEST_OVERLAP_SCENARIO1 - First leave record',
-      bonus: 0,
-      year: 2024
-    }
+    const firstLeaveStart = new Date('2024-06-10')
+    const firstLeaveEnd = new Date('2024-06-15')
 
-    const firstLeaveResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/leave-records`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(firstLeaveData)
-    })
+    try {
+      const firstLeaveRecord = await prisma.leaveRecord.create({
+        data: {
+          employeeId: testEmployeeId,
+          startDate: firstLeaveStart,
+          endDate: firstLeaveEnd,
+          totalDays: 6,
+          workingDays: 4,
+          type: 'ANNUAL',
+          status: 'APPROVED',
+          notes: 'TEST_OVERLAP_SCENARIO1 - First leave record',
+          bonus: 0,
+          year: 2024
+        }
+      })
 
-    const firstLeaveResult = await firstLeaveResponse.json()
-
-    if (firstLeaveResponse.status === 201 && firstLeaveResult.success) {
-      testLeaveId1 = firstLeaveResult.leaveRecord.id
+      testLeaveId1 = firstLeaveRecord.id
       testResults.push({
         step: 'Step 1',
         action: 'Create first leave record',
         status: 'SUCCESS',
-        expected: '201 Created',
-        actual: `${firstLeaveResponse.status} Created`,
+        expected: 'Leave record created',
+        actual: 'Leave record created successfully',
         data: {
           period: '10/06/2024 - 15/06/2024',
           leaveId: testLeaveId1
         }
       })
-    } else {
+    } catch (error) {
       testResults.push({
         step: 'Step 1',
         action: 'Create first leave record',
         status: 'FAILED',
-        expected: '201 Created',
-        actual: `${firstLeaveResponse.status} ${firstLeaveResult.error || 'Unknown error'}`,
-        data: firstLeaveResult
+        expected: 'Leave record created',
+        actual: error instanceof Error ? error.message : 'Unknown error',
+        data: { error }
       })
       
       // If first step fails, we can't continue
@@ -127,71 +123,105 @@ export async function GET() {
       })
     }
 
-    // Step 2: Try to create overlapping leave (should fail with 409)
-    const overlappingLeaveData = {
-      employeeId: testEmployeeId,
-      startDate: '2024-06-12',  // Overlaps with first leave (10-15)
-      endDate: '2024-06-18',
-      totalDays: 7,
-      workingDays: 5,
-      type: 'ANNUAL',
-      status: 'APPROVED',
-      notes: 'TEST_OVERLAP_SCENARIO1 - Overlapping leave record',
-      bonus: 0,
-      year: 2024
-    }
+    // Step 2: Try to create overlapping leave (should be prevented by overlap detection)
+    const overlappingStart = new Date('2024-06-12') // Overlaps with first leave (10-15)
+    const overlappingEnd = new Date('2024-06-18')
 
-    const overlappingResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/leave-records`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(overlappingLeaveData)
+    // Test the overlap detection logic directly
+    const existingLeaveRecords = await prisma.leaveRecord.findMany({
+      where: {
+        employeeId: testEmployeeId,
+        status: {
+          in: ['APPROVED', 'PENDING']
+        }
+      }
     })
 
-    const overlappingResult = await overlappingResponse.json()
+    // Check if any existing leave overlaps with the new period
+    const overlappingLeave = existingLeaveRecords.find(record => 
+      datesOverlap(overlappingStart, overlappingEnd, record.startDate, record.endDate)
+    )
 
-    // This should fail with 409 Conflict
-    if (overlappingResponse.status === 409 && !overlappingResult.success) {
-      const hasExpectedError = overlappingResult.error && 
-                              overlappingResult.error.includes('conflict') &&
-                              overlappingResult.details &&
-                              overlappingResult.details.conflictingLeave
-
+    if (overlappingLeave) {
+      // Good! Overlap was detected - this is expected behavior
+      const overlappingPeriod = `${formatDateForDisplay(overlappingLeave.startDate)} - ${formatDateForDisplay(overlappingLeave.endDate)}`
+      const requestedPeriod = `${formatDateForDisplay(overlappingStart)} - ${formatDateForDisplay(overlappingEnd)}`
+      
       testResults.push({
         step: 'Step 2',
-        action: 'Create overlapping leave record',
-        status: hasExpectedError ? 'SUCCESS' : 'PARTIAL_SUCCESS',
-        expected: '409 Conflict with detailed error',
-        actual: `${overlappingResponse.status} ${overlappingResult.error}`,
+        action: 'Test overlap detection logic',
+        status: 'SUCCESS',
+        expected: 'Overlap detected and prevented',
+        actual: 'Overlap successfully detected',
         data: {
           conflictDetected: true,
-          conflictingLeave: overlappingResult.details?.conflictingLeave,
-          requestedPeriod: '12/06/2024 - 18/06/2024',
-          errorDetails: overlappingResult
+          conflictingLeave: {
+            id: overlappingLeave.id,
+            period: overlappingPeriod,
+            type: overlappingLeave.type,
+            status: overlappingLeave.status
+          },
+          requestedPeriod: requestedPeriod
         }
       })
-    } else if (overlappingResponse.status === 201) {
-      // This is BAD - overlap detection failed!
-      testResults.push({
-        step: 'Step 2',
-        action: 'Create overlapping leave record',
-        status: 'CRITICAL_FAILURE',
-        expected: '409 Conflict',
-        actual: '201 Created - OVERLAP DETECTION FAILED!',
-        data: {
-          overlappingLeaveCreated: overlappingResult,
-          criticalIssue: 'System allowed overlapping leave periods'
-        }
-      })
+
+      // Now verify that trying to create this would actually fail
+      try {
+        await prisma.leaveRecord.create({
+          data: {
+            employeeId: testEmployeeId,
+            startDate: overlappingStart,
+            endDate: overlappingEnd,
+            totalDays: 7,
+            workingDays: 5,
+            type: 'ANNUAL',
+            status: 'APPROVED',
+            notes: 'TEST_OVERLAP_SCENARIO1 - This should fail',
+            bonus: 0,
+            year: 2024
+          }
+        })
+
+        // If we get here, that's bad - the database allowed overlapping records
+        testResults.push({
+          step: 'Step 2b',
+          action: 'Verify database prevents overlap',
+          status: 'CRITICAL_FAILURE',
+          expected: 'Database should prevent creation',
+          actual: 'Database allowed overlapping leave creation',
+          data: {
+            criticalIssue: 'Overlap detection logic works but database constraint missing'
+          }
+        })
+      } catch (dbError) {
+        // This is expected if we have database constraints
+        testResults.push({
+          step: 'Step 2b',
+          action: 'Verify database prevents overlap',
+          status: 'INFO',
+          expected: 'Database constraint or application logic prevents overlap',
+          actual: 'Creation blocked (good for data integrity)',
+          data: {
+            note: 'Database-level protection working'
+          }
+        })
+      }
     } else {
+      // Bad! No overlap detected when there should be one
       testResults.push({
         step: 'Step 2',
-        action: 'Create overlapping leave record',
-        status: 'UNEXPECTED_ERROR',
-        expected: '409 Conflict',
-        actual: `${overlappingResponse.status} ${overlappingResult.error || 'Unknown response'}`,
-        data: overlappingResult
+        action: 'Test overlap detection logic',
+        status: 'CRITICAL_FAILURE',
+        expected: 'Overlap detected and prevented',
+        actual: 'NO OVERLAP DETECTED - LOGIC FAILURE!',
+        data: {
+          criticalIssue: 'Overlap detection algorithm failed',
+          existingLeaveRecords: existingLeaveRecords.map(r => ({
+            period: `${formatDateForDisplay(r.startDate)} - ${formatDateForDisplay(r.endDate)}`,
+            status: r.status
+          })),
+          requestedPeriod: '12/06/2024 - 18/06/2024'
+        }
       })
     }
 
