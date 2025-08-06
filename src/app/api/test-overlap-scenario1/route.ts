@@ -15,6 +15,8 @@ export async function GET() {
   }> = []
 
   try {
+    // Ensure Prisma is connected
+    await prisma.$connect()
 
     // Step 0: Find or create a test employee
     let testEmployee = await prisma.employee.findFirst({
@@ -262,6 +264,9 @@ export async function GET() {
       }
     } catch (cleanupError) {
       console.error('Cleanup error:', cleanupError)
+    } finally {
+      // Always disconnect Prisma
+      await prisma.$disconnect()
     }
   }
 }
