@@ -237,15 +237,28 @@ export async function GET() {
       { status: 500 }
     )
   } finally {
-    // Cleanup: Remove test leave records
+    // Cleanup: Remove test leave records and test employee
     try {
       if (testEmployeeId) {
+        // First remove leave records
         await prisma.leaveRecord.deleteMany({
           where: {
             employeeId: testEmployeeId,
             notes: { contains: 'TEST_OVERLAP_SCENARIO1' }
           }
         })
+
+        // Then remove the test employee (if it was created by this test)
+        const testEmployee = await prisma.employee.findUnique({
+          where: { id: testEmployeeId }
+        })
+
+        if (testEmployee && testEmployee.email.startsWith('test-overlap-')) {
+          await prisma.employee.delete({
+            where: { id: testEmployeeId }
+          })
+          console.log('✅ Cleaned up test employee:', testEmployee.email)
+        }
       }
     } catch (cleanupError) {
       console.error('Cleanup error:', cleanupError)
