@@ -175,7 +175,7 @@ export async function GET() {
       input: '{ data: test }',
       output: successResponse,
       expected: { success: true, data: 'test' },
-      status: (successResponse.success === true && successResponse.data === 'test') ? 'PASS' : 'FAIL'
+      status: (successResponse.success === true && 'data' in successResponse && successResponse['data'] === 'test') ? 'PASS' : 'FAIL'
     })
 
     const allPassed = tests.every(test => test.status === 'PASS')
